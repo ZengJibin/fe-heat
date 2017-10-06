@@ -2,3 +2,4 @@
 
 ## Quick start
 ## Authentification
+## Authorised values/parameters
