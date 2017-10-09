@@ -32,7 +32,7 @@ parameters:
     type: string
     label: availability_zone
     description: availability zone.
-    default: as-south-0a
+    default: eu-west-0a
   size:
     type: number
     label: data_volume
