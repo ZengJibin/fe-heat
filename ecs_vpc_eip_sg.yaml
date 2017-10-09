@@ -1,0 +1,124 @@
+heat_template_version: 2014-10-16
+description: create an ECS+VPC+EIP+secGroup
+parameters:  
+  name: 
+    type: string 
+    description: name of the vm 
+    default: testzengjibing_OCb1004 
+
+  key_name:
+    description: Keypair to inject in instance
+    label: SSH Keypair
+    type: string
+    #default: set_your-own_keypair
+    default: KeyPair-502czjb004_2
+  image:
+    type: string
+    label: Image name or ID
+    description: Image to be used for compute instance
+    default: OBS_U_RHEL_6.8
+  availability_zone:
+    type: string
+    label: availability_zone
+    description: availability zone.
+    default: as-south-0a
+  flavor_name:
+    description: Flavor to use for the deployed instance
+    type: string
+    label: Instance Type (Flavor)
+    default: s1.medium
+  fip_pool:
+    type: string
+    label: Public FIP pool name or ID
+    description: Public Floating IP Network to attach server to.
+    default: admin_external_net
+  cidr:
+    type: string
+    label: cidr
+    description: cidr value.
+    default: 192.168.0.0/24
+  dns:
+    type: string
+    label: dns
+    description: dns server.
+    default: 100.125.0.41
+resources:
+  my_network:
+    type: OS::Neutron::Net
+	
+  my_subnet:
+    type: OS::Neutron::Subnet
+    depends_on: my_router
+    properties:
+      name: test-subnet
+      network_id: { get_resource: my_network }
+      cidr: { get_param: cidr }
+      dns_nameservers:
+        - { get_param: dns }
+
+  my_router:
+    type: OS::Neutron::Router
+    properties:
+      name: test-router
+      external_gateway_info:
+        network: { get_param: fip_pool }
+
+  my_router-interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_resource: my_router }
+      subnet: { get_resource: my_subnet }
+	  
+  security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: 'security group for VM'
+      name: heattestzjb_OCB1004
+      rules: 
+        - { direction: ingress, protocol: TCP, port_range_min: 22, port_range_max: 22 }
+        - { direction: ingress, protocol: TCP, port_range_min: 80, port_range_max: 80 }
+        - { direction: ingress, protocol: UDP, port_range_min: 161, port_range_max: 161 }
+        - { direction: ingress, protocol: UDP, port_range_min: 123, port_range_max: 123 }
+        - { direction: ingress, protocol: UDP, port_range_min: 10050, port_range_max: 10050 }
+        - { direction: ingress, protocol: TCP, port_range_min: 10050, port_range_max: 10050 }
+        - { direction: ingress, protocol: UDP, port_range_min: 10051, port_range_max: 10051 }
+        - { direction: ingress, protocol: TCP, port_range_min: 10051, port_range_max: 10051 }
+        - { direction: ingress, protocol: ICMP }
+        - { direction: egress, protocol: ICMP }
+        - { direction: egress, protocol: TCP }
+        - { direction: egress, protocol: UDP }
+  floating_ip: 
+    type: OS::Neutron::FloatingIP 
+    properties: 
+      floating_network: admin_external_net 
+	  
+  instance_port:
+    type: OS::Neutron::Port
+      properties:
+        network: { get_resource: my_network }
+        security_groups: { get_resource: security_group }
+		
+  my_instance: 
+    type: OS::Nova::Server 
+    properties: 
+      name: { get_param: name } 
+      availability_zone: { get_param: availability_zone }
+      key_name: { get_param: key_name } 
+      image: { get_param: image } 
+      flavor: { get_param: flavor } 
+      networks:
+        - port: { get_resource: instance_port }
+
+  floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: { get_param: fip_pool }
+      port_id: { get_resource: instance_port }
+    depends_on:
+      - my_instance
+
+outputs: 
+  instance_networks: 
+    description: The IP addresses of the deployed instance 
+    value: [{ get_attr: [my_instance, networks] },{get_attr: [floating_ip, floating_ip_address]}]
+

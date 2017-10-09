@@ -1,0 +1,90 @@
+heat_template_version: 2015-10-15
+
+description: Simple template to create a router.
+
+parameters:
+  fip_pool:
+    type: string
+    label: Public FIP pool name or ID
+    description: Public Floating IP Network to attach server to.
+    default: admin_external_net
+  cidr:
+    type: string
+    label: cidr
+    description: cidr value.
+    default: 192.168.0.0/24
+  dns:
+    type: string
+    label: dns
+    description: dns server.
+    default: 100.125.0.41
+
+resources:
+  my_network:
+    type: OS::Neutron::Net
+    properties:
+      name: test-network
+
+  my_subnet:
+    type: OS::Neutron::Subnet
+    depends_on: my_router
+    properties:
+      name: test-subnet
+      network_id: { get_resource: my_network }
+      cidr: { get_param: cidr }
+      dns_nameservers:
+        - { get_param: dns }
+
+  my_router:
+    type: OS::Neutron::Router
+    properties:
+      name: test-router
+      external_gateway_info:
+        network: { get_param: fip_pool }
+
+  my_router-interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_resource: my_router }
+      subnet: { get_resource: my_subnet }
+  security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: 'security group for VM'
+      name: heattestzjb_OCB
+      rules: [
+        {direction: 'ingress',
+        remote_ip_prefix: '0.0.0.0/0',
+        port_range_min: 1,
+        port_range_max: 30000,
+        ethertype: IPv4,
+        protocol: 'tcp'},
+        {direction: 'egress',
+        remote_ip_prefix: '0.0.0.0/0',
+        port_range_min: 1,
+        port_range_max: 65535,
+        ethertype: 'IPv4',
+        protocol: 'tcp'},
+        {direction: 'egress',
+        remote_ip_prefix: '0.0.0.0/0',
+        port_range_min: 1,
+        port_range_max: 65535,
+        ethertype: 'IPv4',
+        protocol: 'udp'},
+        {direction: 'ingress',
+        remote_ip_prefix: '0.0.0.0/0',
+        port_range_min: null,
+        port_range_max: null,
+        ethertype: 'IPv4',
+        protocol: 'icmp'},
+        {direction: egress,
+        remote_ip_prefix: '0.0.0.0/0',
+        port_range_min: null,
+        port_range_max: null,
+        ethertype: 'IPv4',
+        protocol: 'icmp'}
+        ]
+  floating_ip: 
+    type: OS::Neutron::FloatingIP 
+    properties: 
+      floating_network: admin_external_net 

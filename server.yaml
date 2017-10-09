@@ -1,0 +1,71 @@
+heat_template_version: 2014-10-16
+
+description: Deploy an nova instance with a volume.
+
+parameters:
+  name:
+    type: string
+    label: Name or ID
+    description: Name to be used for compute instance
+    default: FEtest001
+  image:
+    type: string
+    label: Image name or ID
+    description: Image to be used for compute instance
+    default: OBS_U_RHEL_6.8
+  key:
+    type: string
+    label: Key name
+    description: Name of key-pair to be used for compute instance
+    #default: set_your-own_keypair
+  flavor:
+    type: string
+    label: flavor name
+    description: Name of flavor to be used for compute instance
+    default: s1.medium
+  network:
+    type: string
+    label: Network name or ID
+    description: Network to attach server to.
+    #default: use_your-own_network
+  availability_zone:
+    type: string
+    label: availability_zone
+    description: availability zone.
+    default: as-south-0a
+  size:
+    type: number
+    label: data_volume
+    description: The size of data_volume.
+    default: 60
+
+resources:
+  neutron_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: network }
+
+  data_volume:
+    type: OS::Cinder::Volume
+    properties:
+      name: instance_volume_data
+      size: { get_param: size }
+      availability_zone: { get_param: availability_zone }
+
+  volume_attach:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      volume_id: { get_resource: data_volume }
+      instance_uuid: { get_resource: nova_serer }
+
+  nova_serer:
+    type: OS::Nova::Server
+    properties:
+      name: { get_param: name } 
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key }
+      networks:
+        - port: { get_resource: neutron_port }
+      availability_zone: { get_param: availability_zone }
+

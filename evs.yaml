@@ -1,0 +1,35 @@
+heat_template_version: 2014-10-16
+
+
+description: an evs create and attach to an existing ecs
+
+parameters:
+    server_id:
+      label: server ID  
+      type: string
+      #default: you need to choose an existing server id,use the openstack cli:openstack server list
+      default: 901abc4f-2c59-4f26-b78f-0b50d7424e20
+    volume_type:
+      type: string
+      label: volume type
+      description: type of volume,can set in SATA or SSD
+      default: SATA
+    availability_zone:
+      type: string
+      label: availability_zone
+      description: availability_zone.
+      default: as-south-0a
+resources:
+   cinder_volume:
+    type: OS::Cinder::Volume
+    properties:
+      size: 60
+      volume_type: { get_param: volume_type }
+      availability_zone: { get_param: availability_zone }
+
+   volume_attachment:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      volume_id: { get_resource: cinder_volume }
+      instance_uuid: { get_param: server_id }
+      mountpoint: /dev/vdb
