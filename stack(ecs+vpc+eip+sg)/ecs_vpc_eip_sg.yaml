@@ -4,14 +4,13 @@ parameters:
   name: 
     type: string 
     description: name of the vm 
-    default: testzengjibing_OCb1004 
+    default: heat_vm1
 
   key_name:
     description: Keypair to inject in instance
     label: SSH Keypair
     type: string
     #default: set_your-own_keypair
-    default: KeyPair-502czjb004_2
   image:
     type: string
     label: Image name or ID
@@ -21,7 +20,7 @@ parameters:
     type: string
     label: availability_zone
     description: availability zone.
-    default: as-south-0a
+    default: eu-west-0a
   flavor_name:
     description: Flavor to use for the deployed instance
     type: string
