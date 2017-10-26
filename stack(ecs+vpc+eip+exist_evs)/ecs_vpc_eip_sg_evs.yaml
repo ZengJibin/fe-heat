@@ -21,7 +21,7 @@ parameters:
     type: string
     label: availability_zone
     description: availability zone.
-    default: as-south-0a
+    default: eu-west-0a
   flavor_name:
     description: Flavor to use for the deployed instance
     type: string
