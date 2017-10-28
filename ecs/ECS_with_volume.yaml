@@ -1,0 +1,66 @@
+heat_template_version: 2014-10-16  
+description: Create minimal stack with an attached Volume. 
+parameters: 
+  key_name: 
+    type: string 
+    description: Name of an existing key pair to use for the instance 
+    default: KeyPair-502czjb004_2
+  flavor: 
+    type: string 
+    description: Flavor for the instance to be created 
+    default: s1.medium
+  image: 
+    type: string 
+    description: Name or ID of the image to use for the instance. 
+    default: OBS_U_RHEL_6.8
+  network: 
+    type: string 
+    description: The network for the VM 
+    default: bd97c7d6-959c-4060-b460-fedb7416f6a5
+  vol_size: 
+    type: number 
+    description: The size of the Cinder volume 
+    default: 40 
+  volume_type: 
+    type: string 
+    description: The type of the Cinder volume 
+    default: SATA 
+  availability_zone:
+    type: string
+    label: availability_zone
+    default: as-south-0a
+    description: availability_zone.
+  name: 
+    type: string 
+    description: name of the vm 
+    default: testzengjibing 
+ 
+ 
+resources: 
+  my_instance: 
+    type: OS::Nova::Server 
+    properties: 
+      availability_zone: { get_param: availability_zone }
+      key_name: { get_param: key_name } 
+      image: { get_param: image } 
+      flavor: { get_param: flavor } 
+      networks: [{network: {get_param: network} }] 
+      name: { get_param: name } 
+  my_vol: 
+    type: OS::Cinder::Volume 
+    properties: 
+      size: { get_param: vol_size } 
+      volume_type: { get_param: volume_type } 
+      availability_zone: { get_param: availability_zone } 
+  vol_att: 
+    type: OS::Cinder::VolumeAttachment 
+    properties: 
+      instance_uuid: { get_resource: my_instance } 
+      volume_id: { get_resource: my_vol } 
+      mountpoint: /dev/vdb 
+ 
+outputs: 
+  instance_networks: 
+    description: The IP addresses of the deployed instance 
+    value: { get_attr: [my_instance, networks] }
+

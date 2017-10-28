@@ -1,0 +1,95 @@
+heat_template_version: 2014-10-16  
+description: Create an ELB resource,just in internal network and listen for one VM
+parameters: 
+  elb_name:
+    type: string 
+    description: name of the elb 
+    default: testzengjibing_OCb1025 
+  key_name:
+    description: Keypair to inject in instance
+    label: SSH Keypair
+    type: string
+    #default: set_your-own_keypair
+    default: KeyPair-502czjb004_2
+  image:
+    type: string
+    label: Image name or ID
+    description: Image to be used for compute instance
+    default: OBS_U_RHEL_6.8
+  availability_zone:
+    type: string
+    label: availability_zone
+    description: availability zone.
+    default: as-south-0a
+  flavor_name:
+    description: Flavor to use for the deployed instance
+    type: string
+    label: Instance Type (Flavor)
+    default: s1.medium 
+  network: 
+    type: string 
+    description: The network for the VM 
+    default: bd97c7d6-959c-4060-b460-fedb7416f6a5
+  vpc_id:  
+    type: string  
+    description: Vpc id. 
+    default: 028c7638-7ca3-4347-9fd5-21dae882bc2f
+  server_name: 
+    type: string 
+    description: Server Name 
+    default: test_server  
+  security_group:
+    type: string
+    label: Security group name
+    description: Security group name
+    default: 0efe4c0a-a59c-4d2b-8c8b-79ac376396b5
+resources:  
+  elb_loadbalancer:  
+    type: OSE::ELB::LoadBalancer  
+    properties:  
+      name: { get_param: elb_name } 
+      vpc_id: { get_param: vpc_id }  
+      type: Internal  
+      bandwidth: 300  
+      admin_state_up: true  
+      az: { get_param: availability_zone }
+      security_group: { get_param: security_group }
+      vip_subnet_id: {get_param: network }
+  elb_listener:  
+    type: OSE::ELB::Listener  
+    properties:  
+      name: elb_listener  
+      loadbalancer_id: { get_resource: elb_loadbalancer }  
+      protocol: HTTP  
+      port: 8080  
+      backend_protocol: HTTP  
+      backend_port: 8080  
+      lb_algorithm: leastconn  
+      sticky_session_type: insert  
+  elb_healthcheck:  
+    type: OSE::ELB::HealthCheck  
+    properties:  
+      listener_id: { get_resource: elb_listener }  
+      healthcheck_protocol: TCP  
+      healthcheck_timeout: 2  
+      unhealthy_threshold: 3  
+      healthcheck_interval: 5  
+      healthy_threshold: 3  
+      healthcheck_connect_port: 22  
+      #healthcheck_uri: /  
+  elb_member:  
+    type: OSE::ELB::Member  
+    properties:  
+      listener_id: { get_resource: elb_listener }  
+      members:  
+        - server_id: { get_resource: nova_server1 }  
+          address: { get_attr: [nova_server1, first_address] }  
+  nova_server1:  
+    type: OS::Nova::Server  
+    properties: 
+      name: { get_param: server_name }  
+      image: { get_param: image }  
+      flavor: { get_param: flavor_name } 
+      availability_zone: { get_param: availability_zone }  
+      networks:  
+        - network: { get_param: network }

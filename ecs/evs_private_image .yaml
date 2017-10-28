@@ -1,0 +1,24 @@
+heat_template_version: 2014-10-16
+description: Create an EVS using a private image or public image
+parameters:
+    image:
+      type: string
+      description: Name or ID of the private image or public image.here use the private image
+      default: 072bd42f-36be-4661-9289-08e8859080a0
+    availability_zone:
+      type: string
+      label: availability_zone
+      description: availability_zone.
+      default: as-south-0a
+    volume_size:
+      type: number
+      description: The size of the sys volume.The size cannot be smaller than the image minDisk size.
+      default: 60
+resources:
+    cinder_volume:
+      type: OS::Cinder::Volume
+      properties:
+        size: { get_param: volume_size }
+        availability_zone: { get_param: availability_zone }
+        image: {get_param: image}
+
