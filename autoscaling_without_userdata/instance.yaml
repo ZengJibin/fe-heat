@@ -1,0 +1,73 @@
+heat_template_version: 2015-10-15
+
+description: Advanced template to deploy a instance.
+
+parameters:
+  name:
+    type: string
+    label: Name or ID
+    description: Name to be used for compute instance
+    default: autoscaling1113
+  image:
+    type: string
+    label: Image name or ID
+    description: Image to be used for compute instance
+    default: 2206f6c5-b525-4021-bd16-10d495f1ac16
+  key:
+    type: string
+    label: Key name
+    description: Name of key-pair to be used for compute instance
+    default: KeyPair-502czjb004_2
+  flavor:
+    type: string
+    label: flavor name
+    description: Name of flavor to be used for compute instance
+    default: s1.medium
+  external_network:
+    type: string
+    label: Network name or ID
+    description: Network to attach server to.
+    default: b5e5974c-8600-4bb5-a9f2-e1921bf0a839
+  environment:
+    type: string
+    label: Environment name
+    description: Name of the environment
+    default: test_env
+  security_group:
+    type: string
+    label: Security group name
+    description: Security group name
+    default: 0efe4c0a-a59c-4d2b-8c8b-79ac376396b5
+  availability_zone:
+    type: string
+    label: availability_zone
+    description: availability_zone.
+    default: as-south-0a
+resources:
+  instance_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: external_network }
+      security_groups:
+        - { get_param: security_group }
+
+  instance:
+    type: OS::Nova::Server
+    properties:
+      name: { get_param: name } 
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key }
+      networks:
+        - port: { get_resource: instance_port }
+      metadata:
+        environment: { get_param: environment }
+        metering.stack: { get_param: "OS::stack_id" }
+      availability_zone: { get_param: availability_zone }
+outputs:
+  id:
+    description: The id of the instance.
+    value: { get_resource: instance }
+  ip:
+    description: The ip address of the instance.
+    value: { get_attr: [instance, first_address] }
