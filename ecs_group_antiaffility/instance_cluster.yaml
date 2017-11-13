@@ -1,0 +1,59 @@
+heat_template_version: 2014-10-16 
+ 
+description: Advanced template to deploy an instance cluster. 
+ 
+parameters: 
+  image: 
+    type: string 
+    label: Image name or ID 
+    description: Image to be used for compute instance 
+    default: OBS_U_RHEL_6.8
+  flavor: 
+    type: string 
+    label: flavor name 
+    description: Name of flavor to be used for compute instance 
+    default: s1.medium
+  network: 
+    type: string 
+    label: Network name or ID 
+    description: Network to attach server to. 
+    default: bd97c7d6-959c-4060-b460-fedb7416f6a5
+  external_network: 
+    type: string 
+    label: Public FIP pool name or ID 
+    description: Network name or ID to allocate floating IP from. 
+    default: admin_external_net
+  availability_zone: 
+    type: string 
+    label: AZ ID 
+    description: default to AZ1 for HANA. 
+    default: as-south-0a
+  key_name:
+    description: Keypair to inject in instance
+    label: SSH Keypair
+    type: string
+    #default: set_your-own_keypair
+    default: KeyPair-502czjb004_2  
+ 
+resources:
+  instance_group: 
+    type: OS::Heat::ResourceGroup 
+    properties: 
+      count: 2  
+      resource_def: 
+        type: instance.yaml 
+        properties: 
+          name: instance-group1108-%index% 
+          image: { get_param: image } 
+          flavor: { get_param: flavor } 
+          external_network: { get_param: external_network } 
+          network: { get_param: network } 
+          availability_zone: { get_param: availability_zone } 
+outputs: 
+  ids: 
+    description: The ids of the cluster. 
+    value: { get_attr: [instance_group, attributes, id] } 
+  ips: 
+    description: The ips address of the cluster. 
+    value: { get_attr: [instance_group, attributes, ip] }
+
