@@ -1,0 +1,71 @@
+heat_template_version: 2014-10-16
+
+description: Deploy an nova instance with a SSD system volume.
+
+parameters:
+  name:
+    type: string
+    label: Name or ID
+    description: Name to be used for compute instance
+    default: FEtest001
+  image:
+    type: string
+    label: Image name or ID
+    description: Image to be used for compute instance
+    default: OBS_U_RHEL_6.8
+  key:
+    type: string
+    label: Key name
+    description: Name of key-pair to be used for compute instance
+    default: KeyPair-zengjibing
+  flavor:
+    type: string
+    label: flavor name
+    description: Name of flavor to be used for compute instance
+    default: s1.medium
+  network:
+    type: string
+    label: Network name or ID
+    description: Network to attach server to.
+    default: b5e5974c-8600-4bb5-a9f2-e1921bf0a839
+  availability_zone:
+    type: string
+    label: availability_zone
+    description: availability zone.
+    default: as-south-0a
+  size:
+    type: number
+    label: data_volume
+    description: The size of data_volume.
+    default: 60
+
+resources:
+  neutron_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: network }
+
+  system_volume:
+    type: OS::Cinder::Volume
+    properties:
+      name: instance_volume_system
+      size: { get_param: size }
+      availability_zone: { get_param: availability_zone }
+      volume_type: SSD
+      image: { get_param: image }
+
+  nova_serer:
+    type: OS::Nova::Server
+    properties:
+      name: { get_param: name } 
+      flavor: { get_param: flavor }
+      key_name: { get_param: key }
+      networks:
+        - port: { get_resource: neutron_port }
+      availability_zone: { get_param: availability_zone }
+      block_device_mapping_v2:
+        - boot_index: 0
+          device_name: "vda"
+          volume_id: {get_resource: system_volume}
+          delete_on_termination: "true"
+
